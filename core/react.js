@@ -29,6 +29,7 @@ function createElement(type,props,...children){
         
     }
 }
+let root = null
 // 容器
 function render(el,continer){
     console.log(continer,'123')
@@ -39,7 +40,7 @@ function render(el,continer){
         }
       
     }
-    requestIdleCallback(wookloop)
+    root = nextWorkToUnit
 
 }
 
@@ -61,11 +62,10 @@ function createProps(dom,props){
  * @returns 
  */
 function performWorkofUnit(fiber){
-    console.log(fiber,'asdas')
     if(!fiber.dom){
       //  1.创建dom  
       const dom =fiber.dom =  createDom(fiber.type)
-      fiber.parent.dom.append(dom)
+
       // 2.创建dom 的属性  
       createProps(dom,fiber.props)   
     }
@@ -113,10 +113,33 @@ function wookloop(IdleDeadline){
         requestIdleCallback(wookloop)
     }
 
+    if(!nextWorkToUnit && root){
+        commitRoot()
+    }
+
 }
-// requestIdleCallback(wookloop)
+function commitRoot(){
+    console.log('commitRoot',root)
+    commitWork(root.child)
+    console.log(root,'455')
+    // root = null
+}
+// 添加到子节点
+function commitWork(fiber){
+    fiber.parent.dom.append(fiber.dom)
+    if(fiber.child){
+        commitWork(fiber.child)
+    }
+    if(fiber.subling){
+        commitWork(fiber.subling)
+    }
+    let parentFiber = fiber.parent
+    while(fiber.parent.subling){
+        commitWork(fiber.subling)
+    }
+}
 
-
+requestIdleCallback(wookloop)
 
 
 
