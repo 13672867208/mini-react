@@ -1,4 +1,4 @@
-console.log('hello  mini-react')
+// console.log('hello  mini-react')
 // const obj = {
 //     type:,
 //     props:{
@@ -22,7 +22,7 @@ function createElement(type, props, ...children) {
         props: {
             ...props,
             children: children.map(e => {
-                console.log(e, '66555', typeof e)
+                // console.log(e, '66555', typeof e)
                 return typeof e === 'string' || typeof e === 'number' ? createElementText(e) : e
             })
         }
@@ -64,7 +64,9 @@ function updateProps(dom, props, prevProps) {
     //     }
     // })
 
+    console.log(dom,'123213')
     // 编辑旧节点，旧有新没有
+    if(!dom){return} // 暂时时候这个判断使程序运行
     if (prevProps) {
         Object.keys(prevProps).forEach(key => {
             if (key !== 'children') {
@@ -79,8 +81,12 @@ function updateProps(dom, props, prevProps) {
             if (!prevProps||props[key] !== prevProps[key]) {
                 if (key.startsWith('on')) {
                     const eventName = key.slice(2)
-                    dom.removeEventListener(eventName, props[key])
+                
+                    dom.removeEventListener(eventName, prevProps[key])
                     dom.addEventListener(eventName, props[key])
+                    console.dir(dom)
+                    console.log(eventName,'============-------------==========-000000000000')
+                   
                 } else {
                     dom[key] = props[key]
                 }
@@ -91,14 +97,11 @@ function updateProps(dom, props, prevProps) {
 // 生成链表
 function initChildren(children, fiber) {
     let prevChild = null // 记录上一个儿子
-   let oldFiber = fiber?.altermate?.child
-    if(!oldFiber){
-        console.log(fiber)
-    }
-  
-
+    // console.log(children,'====================',)
+   let oldFiber = fiber.altermate?.child
     children?.forEach((child, index) => {
-        const isSameType = oldFiber && fiber.type === oldFiber.type
+        const isSameType = oldFiber && child.type === oldFiber.type
+        // console.l.log(oldFiber,isSameType,child,'initchildren')
         let newFiber
         if (isSameType) { // 相同标签不需要更新本身dom
             newFiber = {
@@ -112,16 +115,19 @@ function initChildren(children, fiber) {
                 altermate: oldFiber
             }
         } else {
-            newFiber = {
-                type: child.type,
-                props: child.props,
-                parent: fiber,
-                subling: null,
-                child: null,
-                dom: null,
-                effectTag: 'placement',
-                altermate: oldFiber
+            if(child){
+                newFiber = {
+                    type: child.type,
+                    props: child.props,
+                    parent: fiber,
+                    subling: null,
+                    child: null,
+                    dom: null,
+                    effectTag: 'placement',
+                    altermate: oldFiber
+                }
             }
+            
         }
         if (oldFiber) { oldFiber = oldFiber.subling }
         if (index === 0) {
@@ -129,28 +135,29 @@ function initChildren(children, fiber) {
         } else {
             prevChild.subling = newFiber
         }
-        prevChild = newFiber
+        if (newFiber) {
+            prevChild = newFiber;
+          }
     })
 }
 
 // 更新function组件
 function updateFunctionCompoent(fiber) {
-    console.log(fiber.type(fiber.props), 'asdasdasd')
     const children = fiber.type(fiber.props)
     initChildren([children], fiber)
-    console.log(fiber, 'udadasdasd')
-
 }
 
 
 // 更新非function 组件
 
 function updateHostComponent(fiber) {
+
     if (!fiber.dom) {
         //  1.创建dom  
         const dom = fiber.dom = createDom(fiber.type)
 
         // 2.创建dom 的属性  
+        console.log(dom,'123')
         updateProps(dom, fiber.props,{})
     }
 
@@ -172,7 +179,7 @@ function updateHostComponent(fiber) {
  * @returns 
  */
 function performWorkofUnit(fiber) {
-    console.log(fiber, fiber.type, '123123')
+    // console.log(fiber, fiber.type, '123123')
     // fiber.
     typeof fiber.type === 'function' ? updateFunctionCompoent(fiber) : updateHostComponent(fiber)
 
@@ -190,15 +197,12 @@ function performWorkofUnit(fiber) {
 
 }
 
-
-
 let nextWorkToUnit = null
 function wookloop(IdleDeadline) {
     let timer = false
     while (!timer && nextWorkToUnit) {
         nextWorkToUnit = performWorkofUnit(nextWorkToUnit)
         timer = IdleDeadline.timeRemaining() < 1
-        requestIdleCallback(wookloop)
     }
 
     if (!nextWorkToUnit && workRoot) {
@@ -208,7 +212,7 @@ function wookloop(IdleDeadline) {
 }
 function commitRoot() {
     commitWork(workRoot.child)
-    console.log(workRoot,'----------------')
+    // console.log(workRoot,'----------------')
     curentRoot = workRoot
     workRoot = null
 }
@@ -222,6 +226,7 @@ function commitWork(fiber) {
         parentFiber = parentFiber.parent
     }
     if (fiber.effectTag === 'update') { // 更新属性
+        console.log(fiber,'===================')
         updateProps(fiber.dom, fiber.props, fiber.altermate?.props)
     } else {
         if (fiber.dom) {
@@ -229,7 +234,7 @@ function commitWork(fiber) {
         }
     }
 
-    // console.log(fiber.child,'---')
+    // // console.log(fiber.child,'---')
     // 疯狂递归儿子
     if (fiber.child) {
         commitWork(fiber.child)
@@ -242,10 +247,11 @@ function commitWork(fiber) {
 
 requestIdleCallback(wookloop)
 function update() {
+    // console.log(curentRoot,123132123)
     workRoot = {
         dom: curentRoot.dom,
         props: curentRoot.props,
-        altermate: commitRoot
+        altermate: curentRoot
 
     }
     nextWorkToUnit = workRoot

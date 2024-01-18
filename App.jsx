@@ -19,9 +19,9 @@ function SecondCount({num}){
 }
 
 const App = <div>
- 123123
+ {/* 123123 */}
  <div {...obg}>123</div>
- <Counter num={34}></Counter>
+ {/* <Counter num={34}></Counter> */}
  <SecondCount num={20}></SecondCount>
  
     </div> 
