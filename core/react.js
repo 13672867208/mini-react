@@ -51,22 +51,8 @@ function createDom(type) {
     return type === 'TEXT_CONTENT' ? document.createTextNode('') : document.createElement(type)
 }
 function updateProps(dom, props, prevProps) {
-    // Object.keys(props).forEach(item=>{
-    //     if(item!=='children'){
-    //         if(item.startsWith('on')){
-    //             const eventName = item.slice(2)
-    //             dom.removeEventListener(eventName,props[item])
-    //             dom.addEventListener(eventName,props[item])
-    //         }else{
-    //             dom[item]=props[item]
-    //         }    
-
-    //     }
-    // })
-
-    console.log(dom,'123213')
     // 编辑旧节点，旧有新没有
-    if(!dom){return} // 暂时时候这个判断使程序运行
+    // if(!dom){return} // 暂时时候这个判断使程序运行
     if (prevProps) {
         Object.keys(prevProps).forEach(key => {
             if (key !== 'children') {
@@ -80,13 +66,9 @@ function updateProps(dom, props, prevProps) {
         if (key !== 'children') {
             if (!prevProps||props[key] !== prevProps[key]) {
                 if (key.startsWith('on')) {
-                    const eventName = key.slice(2)
-                
+                    const eventName = key.slice(2).toLocaleLowerCase()
                     dom.removeEventListener(eventName, prevProps[key])
                     dom.addEventListener(eventName, props[key])
-                    console.dir(dom)
-                    console.log(eventName,'============-------------==========-000000000000')
-                   
                 } else {
                     dom[key] = props[key]
                 }
@@ -95,13 +77,13 @@ function updateProps(dom, props, prevProps) {
     })
 }
 // 生成链表
-function initChildren(children, fiber) {
+function reconcileChildren(children, fiber) {
     let prevChild = null // 记录上一个儿子
     // console.log(children,'====================',)
    let oldFiber = fiber.altermate?.child
     children?.forEach((child, index) => {
         const isSameType = oldFiber && child.type === oldFiber.type
-        // console.l.log(oldFiber,isSameType,child,'initchildren')
+        // console.l.log(oldFiber,isSameType,child,'reconcilechildren')
         let newFiber
         if (isSameType) { // 相同标签不需要更新本身dom
             newFiber = {
@@ -144,12 +126,11 @@ function initChildren(children, fiber) {
 // 更新function组件
 function updateFunctionCompoent(fiber) {
     const children = fiber.type(fiber.props)
-    initChildren([children], fiber)
+    reconcileChildren([children], fiber)
 }
 
 
 // 更新非function 组件
-
 function updateHostComponent(fiber) {
 
     if (!fiber.dom) {
@@ -166,10 +147,8 @@ function updateHostComponent(fiber) {
     // subling
     // child
     const children = fiber.props.children
-    initChildren(children, fiber)
+    reconcileChildren(children, fiber)
 }
-
-
 
 
 // fiber 是个链表对象
@@ -182,8 +161,6 @@ function performWorkofUnit(fiber) {
     // console.log(fiber, fiber.type, '123123')
     // fiber.
     typeof fiber.type === 'function' ? updateFunctionCompoent(fiber) : updateHostComponent(fiber)
-
-    // 4.返回内容
     // 有儿子先返回儿子
     if (fiber.child) return fiber.child
     // 没有儿子的情况下返回兄弟层级的
@@ -225,14 +202,22 @@ function commitWork(fiber) {
     while (!parentFiber.dom) {
         parentFiber = parentFiber.parent
     }
-    if (fiber.effectTag === 'update') { // 更新属性
-        console.log(fiber,'===================')
-        updateProps(fiber.dom, fiber.props, fiber.altermate?.props)
-    } else {
-        if (fiber.dom) {
-            parentFiber.dom.append(fiber.dom)
+    if(fiber.dom){
+        // if (fiber.effectTag === 'update') { // 更新属性
+        //     updateProps(fiber.dom, fiber.props, fiber.altermate?.props)
+        // } else if() {
+        //     parentFiber.dom.append(fiber.dom)
+        // }
+        switch(fiber.effectTag){
+            case 'update':
+                updateProps(fiber.dom, fiber.props, fiber.altermate?.props)
+                break;
+            case 'placement':
+                updateProps(fiber.dom, fiber.props, fiber.altermate?.props)
+                break;    
         }
     }
+   
 
     // // console.log(fiber.child,'---')
     // 疯狂递归儿子
