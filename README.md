@@ -33,7 +33,16 @@ performWorkofUnit 方法
  
  ### 实现props 更新
  ![Alt text](1705499868813.png)
-将新的树跟旧的树进行比较
+
+
+ 删除就节点
+ delet
+ commitDeletion
+
+  实现组件组件级别的更新而不是全局更新  
+  如何实现？  
+  1. 找到需要更新的节点  
+  2. 找到结束的节点
 
 
 

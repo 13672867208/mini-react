@@ -1,4 +1,5 @@
 import React from "./core/react";
+import {RemoveChild} from './components/Remove.jsx'
 let counts = 100
 let obg= {id:100}
 function Counter({num}){
@@ -17,13 +18,26 @@ function SecondCount({num}){
         <Counter  num={counts}></Counter>
     </div>
 }
+function App() {
+    return (
+      <div id="app">
+        app
+        <div {...obg}>123</div>
+        {/* <Counter num={34}></Counter> */}
+        <SecondCount num={20}></SecondCount>
+        <RemoveChild></RemoveChild>
+      </div>
+    );
+  }
 
-const App = <div>
- {/* 123123 */}
- <div {...obg}>123</div>
- {/* <Counter num={34}></Counter> */}
- <SecondCount num={20}></SecondCount>
- 
-    </div> 
-console.log(App)
+
+
+// const App = <div>
+//  {/* 123123 */}
+//  <div {...obg}>123</div>
+//  {/* <Counter num={34}></Counter> */}
+//  <SecondCount num={20}></SecondCount>
+//  <RemoveChild></RemoveChild>
+//     </div> 
+// console.log(App)
 export default App
