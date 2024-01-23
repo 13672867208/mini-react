@@ -29,19 +29,16 @@ function createElement(type, props, ...children) {
     }
 }
 let workRoot = null // 最新的树
-let curentRoot = null // 保留旧的树
+let currentRoot = null // 保留旧的树
 let deleteList= [] // s收集将要清除的dom
 let wipFiber = null // 记录当前更更新的fiber
 // 容器
 function render(el, continer) {
-
     workRoot = {
         dom: continer,
         props: {
             children: [el]
         },
-        // altermate:null
-
     }
     nextWorkToUnit = workRoot
 
@@ -83,21 +80,20 @@ function updateProps(dom, props, prevProps) {
 // 生成链表
 function reconcileChildren(children, fiber) {
     let prevChild = null // 记录上一个儿子
-   let oldFiber = fiber.altermate?.child
+   let oldFiber = fiber.alternate?.child
     children?.forEach((child, index) => {
         const isSameType = oldFiber && child.type === oldFiber.type
-        // console.l.log(oldFiber,isSameType,child,'reconcilechildren')
         let newFiber
         if (isSameType) { // 相同标签不需要更新本身dom
             newFiber = {
                 type: child.type,
                 props: child.props,
                 parent: fiber,
-                subling: null,
+                sibling: null,
                 child: null,
                 dom: oldFiber.dom,
                 effectTag: 'update',
-                altermate: oldFiber
+                alternate: oldFiber
             }
         } else {
             if(child){
@@ -105,29 +101,28 @@ function reconcileChildren(children, fiber) {
                     type: child.type,
                     props: child.props,
                     parent: fiber,
-                    subling: null,
+                    sibling: null,
                     child: null,
                     dom: null,
                     effectTag: 'placement',
-                    altermate: oldFiber
+                    alternate: oldFiber
                 }
             } 
         }
-        if (oldFiber) { oldFiber = oldFiber.subling }
+        if (oldFiber) { oldFiber = oldFiber.sibling }
         if (index === 0) {
             fiber.child = newFiber
         } else {
-            prevChild.subling = newFiber
+            prevChild.sibling = newFiber
         }
         if (newFiber) {
             prevChild = newFiber;
         }
     })
     // 收集旧数据的dom
-    console.log(oldFiber,'12313')
     while(oldFiber){
         deleteList.push(oldFiber)
-        oldFiber = oldFiber.subling
+        oldFiber = oldFiber.sibling
     }
 
 
@@ -135,7 +130,7 @@ function reconcileChildren(children, fiber) {
 }
 
 // 更新function组件
-function updateFunctionCompoent(fiber) {
+function updateFunctionComponent(fiber) {
     wipFiber = fiber
     const children = fiber.type(fiber.props)
     reconcileChildren([children], fiber)
@@ -148,8 +143,7 @@ function updateHostComponent(fiber) {
         //  1.创建dom  
         const dom = fiber.dom = createDom(fiber.type)
 
-        // 2.创建dom 的属性  
-        // console.log(dom,'123')
+        // 2.创建dom 的属性
         updateProps(dom, fiber.props,{})
     }
 
@@ -162,33 +156,32 @@ function updateHostComponent(fiber) {
 // fiber 是个链表对象
 /**
  * 
- * @param {type:类型,props:属性,parent:父亲,subling:null,child:null,dom:null} fiber 
+ * @param {type:类型,props:属性,parent:父亲,sibling:null,child:null,dom:null} fiber 
  * @returns 
  */
 function performWorkofUnit(fiber) {
     console.log(fiber,'更新的是谁啊啊')
-    typeof fiber.type === 'function' ? updateFunctionCompoent(fiber) : updateHostComponent(fiber)
+    typeof fiber.type === 'function' ? updateFunctionComponent(fiber) : updateHostComponent(fiber)
     // 有儿子先返回儿子
     if (fiber.child) return fiber.child
     // 没有儿子的情况下返回兄弟层级的
-    // if(fiber.subling) return fiber.subling
+    // if(fiber.sibling) return fiber.subliming
     // // 没有儿子也没有兄弟的情况下返回父子的兄弟 递归防止是function component 的时候又一层是空
     let nextFiber = fiber
     while (nextFiber) {
-        if (nextFiber.subling) { return nextFiber.subling }
+        if (nextFiber.sibling) { return nextFiber.sibling }
         nextFiber = nextFiber.parent
     }
 
 }
 
 let nextWorkToUnit = null
-function wookloop(IdleDeadline) {
+function workLoop(IdleDeadline) {
     let timer = false
     while (!timer && nextWorkToUnit) {
         nextWorkToUnit = performWorkofUnit(nextWorkToUnit)
-        console.log(nextWorkToUnit,'12312312321')
-        // console.log(nextWorkToUnit,wipFiber,wipFiber?.subling?.type === nextWorkToUnit?.subling?.type)
-        if(wipFiber?.subling?.type === nextWorkToUnit?.type){
+        // console.log(nextWorkToUnit,wipFiber,wipFiber?.sibling?.type === nextWorkToUnit?.sibling?.type)
+        if(wipFiber?.sibling?.type === nextWorkToUnit?.type){
             nextWorkToUnit = null
         }
         timer = IdleDeadline.timeRemaining() < 1
@@ -197,19 +190,16 @@ function wookloop(IdleDeadline) {
     if (!nextWorkToUnit && workRoot) {
         commitRoot()
     }
-    requestIdleCallback(wookloop)
+    requestIdleCallback(workLoop)
 }
 function commitRoot() {
     commitWork(workRoot.child)
     commitDeletion()    
-    curentRoot = workRoot
+    currentRoot = workRoot
     workRoot = null
 }
 // 删除原本旧的dom
 function commitDeletion(){
-    console.log(deleteList,'123123')
-
-
     deleteList.forEach(fiber=>{
         let parentFiber = fiber.parent
         while (!parentFiber.dom) {
@@ -228,7 +218,7 @@ function commitWork(fiber) {
         parentFiber = parentFiber.parent
     }
      if (fiber.effectTag === 'update') { // 更新属性
-       fiber.dom&&updateProps(fiber.dom, fiber.props, fiber.altermate?.props)
+       fiber.dom&&updateProps(fiber.dom, fiber.props, fiber.alternate?.props)
     } else if(fiber.effectTag === 'placement') {
       if(fiber.dom){
           parentFiber.dom.append(fiber.dom)
@@ -240,27 +230,21 @@ function commitWork(fiber) {
         commitWork(fiber.child)
     }
     // 疯狂递归兄弟
-    if (fiber.subling) {
-        commitWork(fiber.subling)
+    if (fiber.sibling) {
+        commitWork(fiber.sibling)
     }
 }
 
-requestIdleCallback(wookloop)
+requestIdleCallback(workLoop)
 function update() {
-
     let currentFiber = wipFiber
-
     return ()=>{
-        console.log(currentFiber,'=====')
         workRoot = {
            ...currentFiber,
-            altermate: currentFiber
+            alternate: currentFiber
         }
         nextWorkToUnit = workRoot
     }
-
-  
-
 }
 
 
