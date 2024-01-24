@@ -131,8 +131,10 @@ function reconcileChildren(children, fiber) {
 
 // 更新function组件
 function updateFunctionComponent(fiber) {
+    stateIndex=0
+    stateHooks = []
     wipFiber = fiber
-    const children = fiber.type(fiber.props)
+    const children = fiber.type(fiber.props) // 这里会调用useState 方法
     reconcileChildren([children], fiber)
 }
 
@@ -142,7 +144,6 @@ function updateHostComponent(fiber) {
     if (!fiber.dom) {
         //  1.创建dom  
         const dom = fiber.dom = createDom(fiber.type)
-
         // 2.创建dom 的属性
         updateProps(dom, fiber.props,{})
     }
@@ -160,12 +161,11 @@ function updateHostComponent(fiber) {
  * @returns 
  */
 function performWorkofUnit(fiber) {
-    console.log(fiber,'更新的是谁啊啊')
+    // console.log(fiber,'更新的是谁啊啊')
     typeof fiber.type === 'function' ? updateFunctionComponent(fiber) : updateHostComponent(fiber)
     // 有儿子先返回儿子
     if (fiber.child) return fiber.child
     // 没有儿子的情况下返回兄弟层级的
-    // if(fiber.sibling) return fiber.subliming
     // // 没有儿子也没有兄弟的情况下返回父子的兄弟 递归防止是function component 的时候又一层是空
     let nextFiber = fiber
     while (nextFiber) {
@@ -247,6 +247,45 @@ function update() {
     }
 }
 
+// 记录值
+let stateIndex=0
+let stateHooks=[]
+function useState(initVal) {
+    let currentFiber = wipFiber // 保存当前的fiber
+    let oldStateHooks = currentFiber?.alternate?.stateHooks[stateIndex] // 寻找保存 的stateHooks 这个其实是存在fiber.stateHooks 里面
+    const stateHook={
+        state: oldStateHooks?oldStateHooks.state:initVal, // 保存当前值
+        queue: oldStateHooks?oldStateHooks.queue:[] // 收集依赖的
+    }
+    for(let action of stateHook.queue){
+        stateHook.state = action(stateHook.state)
+    }
+    stateHooks.queue = []
+    stateHooks.push(stateHook)
+    stateIndex++;
+    currentFiber.stateHooks = stateHooks;// 将stateHooks里面的指记录
+    function updateState(action) {
+      const eagerState = typeof action==='function' ? action(stateHook.state) : action;
+      if(eagerState===stateHook.state) return
+      typeof action==='function'?stateHook.queue.push(action):stateHook.queue.push(()=>action)
+      workRoot = {
+          ...currentFiber,
+          alternate: currentFiber
+      }
+      console.log(workRoot,'+++++')
+      nextWorkToUnit = workRoot
+    }
 
+    return [stateHook.state,updateState]
+}
+let effectHooks=[]
+function useEffect(action, deps) {
+    const effect = {
+        action,
+        deps,
+        cleanup:null
+    }
+    effectHooks.push(effect)
+}
 
-export default { render, createElement,update }
+export default { render, createElement,update,useState }

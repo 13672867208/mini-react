@@ -36,7 +36,6 @@ performWorkofUnit 方法
 
 
  删除就节点
- delet
  commitDeletion
 
   实现组件组件级别的更新而不是全局更新  
@@ -44,6 +43,13 @@ performWorkofUnit 方法
   1. 找到需要更新的节点  
   2. 找到结束的节点
 
+
+### 实现useState  
+react useState使用方式是  `const [count, setCount] = useState(0);`
+通过useState 传入的参数是初始值，返回的是一个数组，数组的第一个元素是当前的值，第二个元素是更新函数，更新函数的参数就是新的值。
+
+
+### 实现useEffect
 
 
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
